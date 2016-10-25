@@ -32,7 +32,7 @@ public class Main {
         //testing if instructions work, print out the first 100 instructions (hint, it works)
         for (int j = 0; j < 100; j++) {
             for (int i = 0; i < 4; i++) {
-                System.out.print("core " + i + ": ");
+                System.out.print("processor " + i + ": ");
                 System.out.println(instructions.getInstruction(i));
             }
         }

@@ -30,7 +30,7 @@ public class Instruction {
     }
 
     /**
-     * @param core is the core that you want to get the instruction for
+     * @param processor is the processor that you want to get the instruction for
      * @return a Hashtable of size 2 for the current instruction
      *
      * "instruction"
@@ -44,32 +44,32 @@ public class Instruction {
      *
      * Will return -1 in both fields if out of instructions
      */
-    public Hashtable<String, Integer> getInstruction(int core) {
+    public Hashtable<String, Integer> getInstruction(int processor) {
         Hashtable<String, Integer> output = new Hashtable<>(2);
         String line;
 
         // check if it is a NOP instruction that has yet to be executed
-        if (buffers.get(core) != null) {
+        if (buffers.get(processor) != null) {
             output.put("instruction", 2);
-            output.put("address", buffers.get(core));
-            if (buffers.get(core) == 0) {
-                buffers.set(core, null);
+            output.put("address", buffers.get(processor));
+            if (buffers.get(processor) == 0) {
+                buffers.set(processor, null);
             } else {
-                int oldValue = buffers.get(core) - 1;
-                buffers.set(core, oldValue);
+                int oldValue = buffers.get(processor) - 1;
+                buffers.set(processor, oldValue);
             }
             // else grab a new instruction from the file
         } else {
             // get instructions from new line if exists
-            if (scs.get(core).hasNextLine()) {
-                line = scs.get(core).nextLine();
+            if (scs.get(processor).hasNextLine()) {
+                line = scs.get(processor).nextLine();
                 String[] parts = line.split(" ");
                 output.put("instruction", Integer.decode(parts[0]));
                 output.put("address", Integer.decode(parts[1]));
 
                 // set buffer for NOPs
                 if (Integer.decode(parts[0]) == 2) {
-                    buffers.set(core, Integer.decode(parts[1]) - 1);
+                    buffers.set(processor, Integer.decode(parts[1]) - 1);
                 }
                 // otherwise, return -1
             } else {
