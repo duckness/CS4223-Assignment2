@@ -15,7 +15,7 @@ public class Main {
         String[] inputs = new String[5];
         inputs[0] = args[0];
         inputs[1] = args[1];
-        // set to all default values if lacking cache_size, associativity and/or block_size
+        // set to all default values if lacking cacheSize, associativity and/or blockSize
         if (args.length < 5) {
             System.out.println("Insufficient inputs, using default values.");
             inputs[2] = "4096";
