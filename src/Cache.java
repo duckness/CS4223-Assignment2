@@ -40,7 +40,7 @@ public class Cache {
      * "data" variable, we don't need/have data.
      */
 
-    private FixedList<FixedQueue<ValidAndTag>> l1cache;
+    private FixedList<FixedQueue<ValidDirtyTag>> l1cache;
     private int associativity;
     private int arraySize;
     private int offsetBits;
@@ -76,22 +76,22 @@ public class Cache {
         return setTagInRow(l1cache.get(index), getTag(address));
     }
 
-    private boolean checkRowForTag (FixedQueue<ValidAndTag> row, int tag) {
+    private boolean checkRowForTag (FixedQueue<ValidDirtyTag> row, int tag) {
         cacheAccesses += 1;
         // check if the tag exists in the cache
         for (int i = 0; i < associativity; i++) {
-            if (tag == row.get(i).tag && row.get(i).valid == 1) {
+            if (tag == row.get(i).tag && row.get(i).valid == true) {
                 row.remove(i);
-                row.add(new ValidAndTag(1, tag));
+                row.add(new ValidDirtyTag(true, false, tag));
                 return false;
             }
         }
         cacheMisses += 1;
-        row.add(new ValidAndTag(1, tag));
+        row.add(new ValidDirtyTag(true, false, tag));
         return true;
     }
 
-    private boolean setTagInRow (FixedQueue<ValidAndTag> row, int tag) {
+    private boolean setTagInRow (FixedQueue<ValidDirtyTag> row, int tag) {
         cacheAccesses += 1;
         return true;
     }
