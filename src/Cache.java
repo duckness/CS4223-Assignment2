@@ -1,10 +1,9 @@
 import java.lang.Math;
 
 /**
- * The L1 cache. Each processor will have their own cache.
- *
- * Created by Bjorn Lim on 25/10/16.
+ * The L1 cache.
  */
+
 public class Cache {
     /**
      * Static variables:
@@ -40,60 +39,101 @@ public class Cache {
      * "data" variable, we don't need/have data.
      */
 
-    private FixedList<FixedQueue<ValidDirtyTag>> l1cache;
+    private FixedList<FixedQueue<CacheBlock>> l1cache;
+
+    private int cacheSize;
     private int associativity;
+    private int blockSize;
+    private Protocol protocol;
+
     private int arraySize;
     private int offsetBits;
     private int indexBits;
     private int tagBits;
 
-    private int cacheMisses;
     private int cacheAccesses;
+    private int readHit;
+    private int readMiss;
+    private int writeHit;
+    private int writeMiss;
 
-
-    public Cache (int cacheSize, int associativity, int blockSize) {
-        cacheMisses = 0;
+    public Cache (int cacheSize, int associativity, int blockSize, Protocol proto) {
         cacheAccesses = 0;
+        readHit = 0;
+        readMiss = 0;
+        writeHit = 0;
+        writeMiss = 0;
+
+        this.cacheSize = cacheSize;
         this.associativity = associativity;
+        this.blockSize = blockSize;
+        this.protocol = proto;
+
         arraySize = cacheSize/blockSize/associativity;              // this is the number of "rows" in the cache
-        l1cache = new FixedList<>(arraySize);                       // create a fixed size ArrayList
+
+        l1cache = new FixedList<>(arraySize);                       // create a fixed size ArrayList as our cache
         for (int i = 0; i < arraySize; i++) {
             l1cache.set(i, new FixedQueue<>(associativity));        // create fixed size queue for associativity (LRU)
         }
+
         offsetBits = binaryLog(blockSize);
         indexBits = binaryLog(cacheSize/blockSize);
         tagBits = 32 - offsetBits - indexBits;
 
+        System.out.println("Protocol: " + this.protocol);
+        System.out.println("Cache Size: " + this.cacheSize + " Bytes");
+        System.out.println("Associativity: " + this.associativity);
+        System.out.println("Block Size: " + this.blockSize + " Bytes");
+        System.out.println("Offset: " + this.offsetBits + " Bits");
+        System.out.println("Set Index: " + this.indexBits + " Bits");
+        System.out.println("Tag bits: " + this.tagBits + " Bits");
     }
 
-    public boolean ldrInstruction (int address) {
-        int index = getIndex(address);
-        return checkRowForTag(l1cache.get(index), getTag(address));
-    }
-
-    public boolean strInstruction (int address) {
-        int index = getIndex(address);
-        return setTagInRow(l1cache.get(index), getTag(address));
-    }
-
-    private boolean checkRowForTag (FixedQueue<ValidDirtyTag> row, int tag) {
+    public void readCache(int address) {
         cacheAccesses += 1;
-        // check if the tag exists in the cache
+
+        int index = getIndex(address);
+        FixedQueue<CacheBlock> row = l1cache.get(index);
+        int tag = getTag(address);
+
         for (int i = 0; i < associativity; i++) {
-            if (tag == row.get(i).tag && row.get(i).valid == true) {
-                row.remove(i);
-                row.add(new ValidDirtyTag(true, false, tag));
-                return false;
+            if (tag == row.get(i).tag) {
+                // take care of the case of MSI/MESI and invalid state
+                if ((protocol == Protocol.MSI || protocol == Protocol.MESI) && row.get(i).state == State.INVALID) {
+                    break;
+                }
+                readHit += 1;
+                reorderCache(row, i, tag);
+                return;
             }
         }
-        cacheMisses += 1;
-        row.add(new ValidDirtyTag(true, false, tag));
-        return true;
+        // from here, cache missed.
+        readMiss += 1;
+        // TODO: something on bus for readMiss
     }
 
-    private boolean setTagInRow (FixedQueue<ValidDirtyTag> row, int tag) {
+    public void writeCache(int address) {
         cacheAccesses += 1;
-        return true;
+
+        int index = getIndex(address);
+        FixedQueue<CacheBlock> row = l1cache.get(index);
+        int tag = getTag(address);
+
+        for (int i = 0; i < associativity; i++) {
+            if (tag == row.get(i).tag) {
+                // take care of the case of MSI/MESI and invalid state
+                if ((protocol == Protocol.MSI || protocol == Protocol.MESI) && row.get(i).state == State.INVALID) {
+                    break;
+                }
+                writeHit++;
+                // TODO: something on bus for writeHit
+                reorderCache(row, i, tag);
+                return;
+            }
+        }
+        // from here, cache missed.
+        writeMiss += 1;
+        // TODO: something on bus for writeMiss
     }
 
     /**
@@ -102,6 +142,16 @@ public class Cache {
      */
     private static int binaryLog (int number) {
         return (int)Math.round(Math.log((double)number) / Math.log((double)2));
+    }
+
+    /**
+     * A cache hit, due to temporal locality, that cache needs to be reordered to the front of the queue.
+     * Reorder the queue by simply removing and adding to it.
+     */
+    private void reorderCache (FixedQueue<CacheBlock> row, int index, int tag) {
+        State currentState = row.get(index).state;
+        row.remove(index);
+        row.add(new CacheBlock(currentState,tag));
     }
 
     /**
