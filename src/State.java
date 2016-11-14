@@ -3,9 +3,9 @@
  */
 
 public enum State {
-    MODIFIED,       // AKA dirty
-    SHARED_CLEAN,   // SHARED for MSI, MESI
-    INVALID,        // does not exist for Dragon
-    EXCLUSIVE,      // does not exist for MSI
-    SHARED_DIRTY;   // does not exist for MSI, MESI
+    MODIFIED,           // AKA dirty
+    SHARED_CLEAN,       // SHARED for MSI, MESI
+    INVALID,            // does not exist for Dragon
+    EXCLUSIVE,          // does not exist for MSI
+    SHARED_MODIFIED;    // does not exist for MSI, MESI
 }

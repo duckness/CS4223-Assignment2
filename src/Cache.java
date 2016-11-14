@@ -56,6 +56,7 @@ public class Cache {
     private int readMiss;
     private int writeHit;
     private int writeMiss;
+    private int currentCycle;
 
     public Cache (int cacheSize, int associativity, int blockSize, Protocol proto) {
         cacheAccesses = 0;
@@ -63,6 +64,7 @@ public class Cache {
         readMiss = 0;
         writeHit = 0;
         writeMiss = 0;
+        currentCycle = 0;
 
         this.cacheSize = cacheSize;
         this.associativity = associativity;
@@ -136,8 +138,98 @@ public class Cache {
         // TODO: something on bus for writeMiss
     }
 
+    public void busSnoop(int cycles) {
+        currentCycle = cycles;
+
+    }
+
+    private void msiProtocolBus(CacheBlock block, Transaction transaction) {
+        switch (block.state) {
+            case MODIFIED:
+                if (transaction == Transaction.BUS_READ)
+                    block.state = State.SHARED_CLEAN;
+                else if (transaction == Transaction.BUS_READ_EXCLUSIVE)
+                    block.state = State.INVALID;
+                // TODO: flush data on bus
+                break;
+            case SHARED_CLEAN:
+                if (transaction == Transaction.BUS_READ_EXCLUSIVE)
+                    block.state = State.INVALID;
+                break;
+            case INVALID:
+                break;
+            default:
+                System.out.println("ERROR ERROR PARAMETER");
+                break;
+        }
+    }
+
+    private void mesiProtocolBus (CacheBlock block, Transaction transaction) {
+        switch (block.state) {
+            case MODIFIED:
+                if (transaction == Transaction.BUS_READ)
+                    block.state = State.SHARED_CLEAN;
+                else if (transaction == Transaction.BUS_READ_EXCLUSIVE)
+                    block.state = State.INVALID;
+                // TODO: flush data on bus
+                break;
+            case EXCLUSIVE:
+                if (transaction == Transaction.BUS_READ)
+                    block.state = State.SHARED_CLEAN;
+                else if (transaction == Transaction.BUS_READ_EXCLUSIVE)
+                    block.state = State.INVALID;
+                // TODO: flush data on bus
+                break;
+            case SHARED_CLEAN:
+                if (transaction == Transaction.BUS_READ_EXCLUSIVE)
+                    block.state = State.INVALID;
+                break;
+            case INVALID:
+                break;
+            default:
+                System.out.println("ERROR ERROR PARAMETER");
+                break;
+
+        }
+    }
+
+    private void dragonProtocolBus (CacheBlock block, Transaction transaction) {
+        switch (block.state) {
+            case MODIFIED:
+                if (transaction == Transaction.BUS_READ)
+                    block.state = State.SHARED_MODIFIED;
+                // TODO: flush data on bus
+                break;
+            case EXCLUSIVE:
+                if (transaction == transaction.BUS_READ)
+                    block.state = State.SHARED_CLEAN;
+                break;
+            case SHARED_CLEAN:
+                break;
+            case SHARED_MODIFIED:
+                if (transaction == transaction.BUS_UPDATE)
+                    block.state = State.SHARED_CLEAN;
+                // TODO: bus update???
+                break;
+            default:
+                System.out.println("ERROR ERROR PARAMETER");
+                break;
+        }
+    }
+
     /**
-     * @param number
+     * quick and dirty way to get current stats
+     */
+    public void printCacheStats() {
+        System.out.println("Number of times the cache was accessed: " + cacheAccesses);
+        System.out.println("Number of times there was a read hit: " + readHit);
+        System.out.println("Number of times there was a read miss: " + readMiss);
+        System.out.println("Number of times there was a write hit: " + writeHit);
+        System.out.println("Number of times there was a write miss: " + writeMiss);
+    }
+
+    /**
+     * @param number we are finding the the base 2 logarithm of this input
      * @return log base 2 of the input integer
      */
     private static int binaryLog (int number) {

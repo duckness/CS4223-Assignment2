@@ -8,6 +8,7 @@ public enum Transaction {
     PROCESSOR_WRITE_MISS,
     BUS_READ,
     BUS_READ_EXCLUSIVE,
-    BUD_WRITE_BACK,
-    BUS_UPDATE;
+    BUS_WRITE_BACK,
+    BUS_UPDATE,
+    BUS_FLUSH;
 }
