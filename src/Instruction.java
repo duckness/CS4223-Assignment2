@@ -1,7 +1,5 @@
 /**
- * class to read and intepret the .data files.
- *
- * Created by Bjorn Lim on 24/10/16.
+ * class to read and interpret the .data files.
  */
 
 import java.io.FileInputStream;

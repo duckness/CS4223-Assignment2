@@ -1,5 +1,5 @@
 /**
- * Created by duckness on 12/11/16.
+ * A simple ArrayList with fixed length.
  */
 
 import java.util.ArrayList;

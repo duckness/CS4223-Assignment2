@@ -1,6 +1,5 @@
 /**
- * Need to set a queue for the associativity zzz
- * Created by Bjorn on 12/11/16.
+ * A simple queue with fixed length.
  */
 import java.util.LinkedList;
 
