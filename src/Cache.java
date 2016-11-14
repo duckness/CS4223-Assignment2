@@ -147,6 +147,9 @@ public class Cache {
     /**
      * A cache hit, due to temporal locality, that cache needs to be reordered to the front of the queue.
      * Reorder the queue by simply removing and adding to it.
+     * @param row the queue to be reordered
+     * @param index the item to be reordered
+     * @param tag the value of the item to be reordered
      */
     private void reorderCache (FixedQueue<CacheBlock> row, int index, int tag) {
         State currentState = row.get(index).state;
