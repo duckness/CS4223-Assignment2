@@ -1,4 +1,6 @@
 import java.io.FileNotFoundException;
+import java.util.Vector;
+
 
 public class Main {
 
@@ -28,6 +30,10 @@ public class Main {
         }
 
         instructions = new Instruction(inputs[1]);
+        Vector<Processor> processors = new Vector<Processor>();
+        int cacheSize = Integer.parseInt(inputs[2]);
+        int associativity = Integer.parseInt(inputs[3]);
+        int blockSize = Integer.parseInt(inputs[4]);
 
         //testing if instructions work, print out the first 100 instructions (hint, it works)
         for (int j = 0; j < 100; j++) {
@@ -36,22 +42,31 @@ public class Main {
                 System.out.println(instructions.getInstruction(i));
             }
         }
-        /*
+
         switch(inputs[0].toUpperCase()) {
             case "MSI":
-                //do something;
+                for (int i = 0; i < 4; i++) {
+                    System.out.println(i);
+                    processors.add(new Processor(cacheSize, blockSize, associativity, Protocol.MSI, instructions));
+                }
                 break;
             case "MESI":
-                //do something;
+                for (int i = 0; i < 4; i++) {
+                    System.out.println(i);
+                    processors.add(new Processor(cacheSize, blockSize, associativity, Protocol.MESI, instructions));
+                }
                 break;
             case "DRAGON":
-                //do something;
+                for (int i = 0; i < 4; i++) {
+                    System.out.println(i);
+                    processors.add(new Processor(cacheSize, blockSize, associativity, Protocol.DRAGON, instructions));
+                }
                 break;
             default:
                 System.out.println("Unrecognized protocol.");
                 System.exit(1);
                 break;
         }
-        */
+
     }
 }
