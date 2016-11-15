@@ -123,6 +123,7 @@ public class Cache {
         }
         // from here, cache missed.
         readMiss += 1;
+        isStalled = true;
         // TODO: something on bus for readMiss
         if (protocol == Protocol.MSI || protocol == Protocol.MESI) { // guranteed to be INVALID state
             // bus function new BusOperation(Transaction.BUS_READ, cacheCoreNumber, address);
@@ -148,6 +149,7 @@ public class Cache {
                     break;
                 }
                 writeHit++;
+                isStalled = true;
                 // TODO: something on bus for writeHit
                 if ((protocol == Protocol.MSI || protocol == Protocol.MESI) && row.get(i).state == State.SHARED_CLEAN) {
                     //bus function new BusOperation(Transaction.BUS_READ_EXCLUSIVE, cacheCoreNumber, address);
@@ -161,6 +163,7 @@ public class Cache {
         }
         // from here, cache missed.
         writeMiss += 1;
+        isStalled = true;
         // TODO: something on bus for writeMiss
         if (protocol == Protocol.MSI || protocol == Protocol.MESI) { // guranteed to be INVALID state
         } else { //DRAGON
@@ -382,6 +385,14 @@ public class Cache {
         System.out.println("Number of times there was a read miss: " + readMiss);
         System.out.println("Number of times there was a write hit: " + writeHit);
         System.out.println("Number of times there was a write miss: " + writeMiss);
+    }
+
+    /**
+     * Check if cache is waiting for some operation on bus/main memory to complete
+     * @return true/false if above
+     */
+    public boolean isCacheStalled () {
+        return isStalled;
     }
 
     /**
