@@ -5,7 +5,21 @@ import java.util.Vector;
 public class Main {
 
     private static Instruction instructions;
-    private static boolean isAllComplete = false;
+    private static Vector<Processor> processors;
+
+    static boolean isAllComplete() {
+        boolean processor0 = processors.elementAt(0).isProcDone();
+        boolean processor1 = processors.elementAt(1).isProcDone();
+        boolean processor2 = processors.elementAt(2).isProcDone();
+        boolean processor3 = processors.elementAt(3).isProcDone();
+
+        if(processor0 && processor1 && processor2 && processor3) {
+            return true;
+        }
+        else {
+            return false;
+        }
+    }
 
     /**
      * String[0] “protocol”
@@ -31,7 +45,7 @@ public class Main {
         }
 
         instructions = new Instruction(inputs[1]);
-        Vector<Processor> processors = new Vector<Processor>();
+        processors = new Vector<Processor>();
         int cacheSize = Integer.parseInt(inputs[2]);
         int associativity = Integer.parseInt(inputs[3]);
         int blockSize = Integer.parseInt(inputs[4]);
@@ -54,13 +68,11 @@ public class Main {
                     processors.add(new Processor(cacheSize, blockSize, associativity, Protocol.MSI, instructions));
                 }
 
-                while(!isAllComplete) {
+                while(!isAllComplete()) {
                     for (int i = 0; i < 4; i++) {
                         processors.elementAt(i).getInstruction(i);
+                        processors.elementAt(i).executeInstruction(i);
                     }
-
-                    isAllComplete = true;
-
                 }
                 break;
             case "MESI":
