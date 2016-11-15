@@ -5,6 +5,7 @@ import java.util.Vector;
 public class Main {
 
     private static Instruction instructions;
+    private static boolean isAllComplete = false;
 
     /**
      * String[0] “protocol”
@@ -35,19 +36,31 @@ public class Main {
         int associativity = Integer.parseInt(inputs[3]);
         int blockSize = Integer.parseInt(inputs[4]);
 
+        /*
         //testing if instructions work, print out the first 100 instructions (hint, it works)
         for (int j = 0; j < 100; j++) {
+            System.out.println("Cycle " + (j+1));
             for (int i = 0; i < 4; i++) {
                 System.out.print("processor " + i + ": ");
                 System.out.println(instructions.getInstruction(i));
             }
         }
+        */
 
         switch(inputs[0].toUpperCase()) {
             case "MSI":
                 for (int i = 0; i < 4; i++) {
                     System.out.println(i);
                     processors.add(new Processor(cacheSize, blockSize, associativity, Protocol.MSI, instructions));
+                }
+
+                while(!isAllComplete) {
+                    for (int i = 0; i < 4; i++) {
+                        processors.elementAt(i).getInstruction(i);
+                    }
+
+                    isAllComplete = true;
+
                 }
                 break;
             case "MESI":
@@ -67,6 +80,5 @@ public class Main {
                 System.exit(1);
                 break;
         }
-
     }
 }
