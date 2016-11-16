@@ -124,13 +124,13 @@ public class Cache {
         // from here, cache missed.
         readMiss += 1;
         isStalled = true;
-        // TODO: something on bus for readMiss
         if (protocol == Protocol.MSI || protocol == Protocol.MESI) { // guranteed to be INVALID state
-            // bus function new BusOperation(Transaction.BUS_READ, cacheCoreNumber, address);
+            // TODO: PROPERLY fill in once method completed
+            Bus.putTransactionInBus(new BusOperation(Transaction.BUS_READ, cacheCoreNumber, address));
             // change to SHARED_CLEAN state once data received
         } else { //DRAGON
             // TODO
-            //bus function new BusOperation(Transaction.BUS_READ_MISS, cacheCoreNumber, address);
+            // Bus.putTransactionInBus(new BusOperation(Transaction.BUS_READ_MISS, cacheCoreNumber, address));
         }
 
     }
@@ -150,9 +150,9 @@ public class Cache {
                 }
                 writeHit++;
                 isStalled = true;
-                // TODO: something on bus for writeHit
                 if ((protocol == Protocol.MSI || protocol == Protocol.MESI) && row.get(i).state == State.SHARED_CLEAN) {
-                    //bus function new BusOperation(Transaction.BUS_READ_EXCLUSIVE, cacheCoreNumber, address);
+                    // TODO: PROPERLY fill in once method completed
+                    Bus.putTransactionInBus(new BusOperation(Transaction.BUS_READ_EXCLUSIVE, cacheCoreNumber, address));
                 } else if (protocol == Protocol.DRAGON) {
                     // TODO
                     //do something for dragon Dx
@@ -164,8 +164,9 @@ public class Cache {
         // from here, cache missed.
         writeMiss += 1;
         isStalled = true;
-        // TODO: something on bus for writeMiss
         if (protocol == Protocol.MSI || protocol == Protocol.MESI) { // guranteed to be INVALID state
+            // TODO: PROPERLY fill in once method completed
+            Bus.putTransactionInBus(new BusOperation(Transaction.BUS_READ_EXCLUSIVE, cacheCoreNumber, address));
         } else { //DRAGON
             // TODO
         }
@@ -173,24 +174,24 @@ public class Cache {
 
     public void busSnoop (int cycles) {
         currentCycle = cycles;
-        // TODO: get operation from bus
-        // TODO: write bus class
-        if (operation = null) { // case where no operation
+        BusOperation operation = Bus.operation;
+        if (operation == null) { // case where no operation
             return;
             // check if transaction is from current core and if transaction is completed
-        } else if (cacheCoreNumber == Bus.getCore() && Bus.isTransactionCompleted) {
+        } else if (cacheCoreNumber == Bus.operation.cacheCore && Bus.isTransactionCompleted) {
             if (operation.transaction == Transaction.BUS_FLUSH) {
-                // Bus.setReceived();
+                Bus.hasCacheReceivedTransaction = true;
                 return;
             }
             if (Bus.hasTransactionResult) { //i.e, busRead/busReadX is successful
                 updateSelfCache(operation);
                 isStalled = false;
-                // Bus.setReceived();
+                Bus.hasCacheReceivedTransaction = true;
             } else {                        // i.e, busRead/busReadX is unsuccessful, read from main memory
                 memoryAccesses += 1;
                 isStalled = true;
-                // TODO: main memory access
+                Bus.operation.lastTransaction = Transaction.BUS_READ;
+                // TODO: memory access???????
             }
             // else this operation is from other cores, and we must update our state to reflect their operation
         } else {
@@ -301,7 +302,7 @@ public class Cache {
                 } else if (transaction == Transaction.BUS_READ_EXCLUSIVE) {
                     block.state = State.INVALID;
                 }
-                // TODO: flush data on bus
+                Bus.flushToBus(cacheCoreNumber);
                 break;
             case SHARED_CLEAN:
                 if (transaction == Transaction.BUS_READ_EXCLUSIVE) {
@@ -324,7 +325,7 @@ public class Cache {
                 } else if (transaction == Transaction.BUS_READ_EXCLUSIVE) {
                     block.state = State.INVALID;
                 }
-                // TODO: flush data on bus
+                Bus.flushToBus(cacheCoreNumber);
                 break;
             case EXCLUSIVE:
                 if (transaction == Transaction.BUS_READ) {
@@ -332,7 +333,7 @@ public class Cache {
                 } else if (transaction == Transaction.BUS_READ_EXCLUSIVE) {
                     block.state = State.INVALID;
                 }
-                // TODO: flush data on bus
+                Bus.sendDataToBus();
                 break;
             case SHARED_CLEAN:
                 if (transaction == Transaction.BUS_READ_EXCLUSIVE) {
@@ -348,13 +349,14 @@ public class Cache {
         }
     }
 
+    // TODO FINISH DRAGONSSSS
     private void dragonProtocolBus (CacheBlock block, Transaction transaction) {
         switch (block.state) {
             case MODIFIED:
                 if (transaction == Transaction.BUS_READ) {
                     block.state = State.SHARED_MODIFIED;
                 }
-                // TODO: flush data on bus
+                Bus.flushToBus(cacheCoreNumber);
                 break;
             case EXCLUSIVE:
                 if (transaction == transaction.BUS_READ) {
