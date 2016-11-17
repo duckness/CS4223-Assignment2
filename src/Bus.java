@@ -13,11 +13,10 @@ public class Bus {
     public static BusOperation operation;
     public static int expectedCompletedCycle;
     private static LinkedList<List<BusOperation>> allBusOperations;
-    private static List<BusOperation> cycleOps;
+    private static List<BusOperation> busOperationsThisCycle;
     private static Protocol protocol;
 
     // static to make sure that only one copy exists
-    // TODO: call this ONCE in Main class!!!!!
     public static void initBus(Protocol proto) {
         // don't use Java Queue interface as it adds restrictions we don't want, need to be careful with using LinkedList
         // normally, add to front of LinkedList and remove from end of LinkedList
@@ -27,12 +26,12 @@ public class Bus {
         protocol = proto;
 
         allBusOperations = new LinkedList<List<BusOperation>>();
-        cycleOps = new ArrayList<BusOperation>();
+        busOperationsThisCycle = new ArrayList<BusOperation>();
         expectedCompletedCycle = -1;
     }
 
     public static void putTransactionInBus(BusOperation operation) {
-        // TODO
+        busOperationsThisCycle.add(operation);
     }
 
     /**
@@ -44,7 +43,7 @@ public class Bus {
 
     /**
      * Not accessing main memory so don't care what is flushed
-     * flush goes first though
+     * flush goes first though, so we need to add to the BACK of the linked list
      */
     public static void flushToBus(int cacheCore) {
         BusOperation busFlush = new BusOperation(Transaction.BUS_FLUSH, 0, cacheCore);
@@ -54,9 +53,15 @@ public class Bus {
         hasTransactionResult = true;
     }
 
-    // TODO: ADD THIS TO MAIN LOOP IN MAIN CLASS!!!!!
-    public static void runBusTransactions() {
+    public static void runBusTransactions(int currentCycle) {
         // TODO
+        // add the operations to the bus from the four processors at the end of the cycle
+        if (!busOperationsThisCycle.isEmpty()) {
+            allBusOperations.add(busOperationsThisCycle);
+            busOperationsThisCycle.clear();
+        }
+
+
         /*
         if(hasCacheReceivedTransaction && !allBusOperations.isEmpty()) {
             hasTransactionResult = false;

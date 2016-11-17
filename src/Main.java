@@ -7,7 +7,7 @@ public class Main {
     private static Instruction instructions;
     private static Vector<Processor> processors;
 
-    static boolean isAllComplete() {
+    private static boolean isAllComplete() {
         boolean processor0 = processors.elementAt(0).isProcDone();
         boolean processor1 = processors.elementAt(1).isProcDone();
         boolean processor2 = processors.elementAt(2).isProcDone();
@@ -18,6 +18,18 @@ public class Main {
         }
         else {
             return false;
+        }
+    }
+
+    private static void runProcessors() {
+        int currentCycle = 0;
+        while(!isAllComplete()) {
+            for (int i = 0; i < 4; i++) {
+                processors.elementAt(i).getInstruction(i);
+                processors.elementAt(i).executeInstruction(i);
+                Bus.runBusTransactions(currentCycle);
+                currentCycle += 1;
+            }
         }
     }
 
@@ -61,8 +73,6 @@ public class Main {
         }
         */
 
-
-
         switch(inputs[0].toUpperCase()) {
             case "MSI":
                 Bus.initBus(Protocol.MSI);
@@ -70,45 +80,27 @@ public class Main {
                     System.out.println(i);
                     processors.add(new Processor(cacheSize, blockSize, associativity, Protocol.MSI, instructions, i));
                 }
-
-                while(!isAllComplete()) {
-                    for (int i = 0; i < 4; i++) {
-                        processors.elementAt(i).getInstruction(i);
-                        processors.elementAt(i).executeInstruction(i);
-                        Bus.runBusTransactions();
-                    }
-                }
+                runProcessors();
                 break;
+
             case "MESI":
                 Bus.initBus(Protocol.MESI);
                 for (int i = 0; i < 4; i++) {
                     System.out.println(i);
                     processors.add(new Processor(cacheSize, blockSize, associativity, Protocol.MESI, instructions, i));
                 }
-
-                while(!isAllComplete()) {
-                    for (int i = 0; i < 4; i++) {
-                        processors.elementAt(i).getInstruction(i);
-                        processors.elementAt(i).executeInstruction(i);
-                        Bus.runBusTransactions();
-                    }
-                }
+                runProcessors();
                 break;
+
             case "DRAGON":
                 Bus.initBus(Protocol.DRAGON);
                 for (int i = 0; i < 4; i++) {
                     System.out.println(i);
                     processors.add(new Processor(cacheSize, blockSize, associativity, Protocol.DRAGON, instructions, i));
                 }
-
-                while(!isAllComplete()) {
-                    for (int i = 0; i < 4; i++) {
-                        processors.elementAt(i).getInstruction(i);
-                        processors.elementAt(i).executeInstruction(i);
-                        Bus.runBusTransactions();
-                    }
-                }
+                runProcessors();
                 break;
+
             default:
                 System.out.println("Unrecognized protocol.");
                 System.exit(1);
