@@ -21,9 +21,12 @@ public class Processor {
         instruction = instr;
     }
 
+    public void setClock(int clockCycle) {
+        currentCycle = clockCycle;
+    }
+
     public void getInstruction(int processorNum) {
-        Hashtable<String, Integer> output = new Hashtable<>(2);
-        output = instruction.getInstruction(processorNum);
+        Hashtable<String, Integer> output = instruction.getInstruction(processorNum);
         this.currentInstruction = output.get("instruction");
         this.currentAddress = output.get("address");
         //System.out.println("Processor " + processorNum);
@@ -33,19 +36,18 @@ public class Processor {
     public void executeInstruction(int processorNum) {
         switch (this.currentInstruction) {
             case 0:
-                this.currentCycle++;
                 //System.out.println("Processor " + processorNum + " current cycle is " + this.currentCycle + " executing Load");
+                cache.busSnoop(currentCycle);
                 //execute load instruction below
                 cache.readCache(this.currentAddress);
                 break;
             case 1:
-                this.currentCycle++;
                 //System.out.println("Processor " + processorNum + " current cycle is " + this.currentCycle + " executing Store");
+                cache.busSnoop(currentCycle);
                 //execute store instruction below
                 cache.writeCache(this.currentAddress);
                 break;
             case 2:
-                this.currentCycle++;
                 // do nothing for NOP instruction
                 //System.out.println("Processor " + processorNum + " current cycle is " + this.currentCycle);
                 break;
@@ -62,5 +64,13 @@ public class Processor {
 
     public boolean isProcDone() {
         return this.isDone;
+    }
+
+    public boolean isProcStalled() {
+        return cache.isCacheStalled();
+    }
+
+    public void cacheBusSnoop() {
+        cache.busSnoop(currentCycle);
     }
 }
