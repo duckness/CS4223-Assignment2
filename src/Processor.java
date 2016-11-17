@@ -15,8 +15,8 @@ public class Processor {
     int currentInstruction;
     int currentAddress;
 
-    public Processor (int cacheSize, int blockSize, int associativity, Protocol proto, Instruction instr) {
-        cache = new Cache(cacheSize, associativity, blockSize, proto);
+    public Processor (int cacheSize, int blockSize, int associativity, Protocol proto, Instruction instr, int cacheCoreNumber) {
+        cache = new Cache(cacheSize, associativity, blockSize, proto, cacheCoreNumber);
         protocol = proto;
         instruction = instr;
     }
@@ -36,11 +36,13 @@ public class Processor {
                 this.currentCycle++;
                 //System.out.println("Processor " + processorNum + " current cycle is " + this.currentCycle + " executing Load");
                 //execute load instruction below
+                cache.readCache(this.currentAddress);
                 break;
             case 1:
                 this.currentCycle++;
                 //System.out.println("Processor " + processorNum + " current cycle is " + this.currentCycle + " executing Store");
                 //execute store instruction below
+                cache.writeCache(this.currentAddress);
                 break;
             case 2:
                 this.currentCycle++;

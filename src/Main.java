@@ -61,30 +61,52 @@ public class Main {
         }
         */
 
+
+
         switch(inputs[0].toUpperCase()) {
             case "MSI":
+                Bus.initBus(Protocol.MSI);
                 for (int i = 0; i < 4; i++) {
                     System.out.println(i);
-                    processors.add(new Processor(cacheSize, blockSize, associativity, Protocol.MSI, instructions));
+                    processors.add(new Processor(cacheSize, blockSize, associativity, Protocol.MSI, instructions, i));
                 }
 
                 while(!isAllComplete()) {
                     for (int i = 0; i < 4; i++) {
                         processors.elementAt(i).getInstruction(i);
                         processors.elementAt(i).executeInstruction(i);
+                        Bus.runBusTransactions();
                     }
                 }
                 break;
             case "MESI":
+                Bus.initBus(Protocol.MESI);
                 for (int i = 0; i < 4; i++) {
                     System.out.println(i);
-                    processors.add(new Processor(cacheSize, blockSize, associativity, Protocol.MESI, instructions));
+                    processors.add(new Processor(cacheSize, blockSize, associativity, Protocol.MESI, instructions, i));
+                }
+
+                while(!isAllComplete()) {
+                    for (int i = 0; i < 4; i++) {
+                        processors.elementAt(i).getInstruction(i);
+                        processors.elementAt(i).executeInstruction(i);
+                        Bus.runBusTransactions();
+                    }
                 }
                 break;
             case "DRAGON":
+                Bus.initBus(Protocol.DRAGON);
                 for (int i = 0; i < 4; i++) {
                     System.out.println(i);
-                    processors.add(new Processor(cacheSize, blockSize, associativity, Protocol.DRAGON, instructions));
+                    processors.add(new Processor(cacheSize, blockSize, associativity, Protocol.DRAGON, instructions, i));
+                }
+
+                while(!isAllComplete()) {
+                    for (int i = 0; i < 4; i++) {
+                        processors.elementAt(i).getInstruction(i);
+                        processors.elementAt(i).executeInstruction(i);
+                        Bus.runBusTransactions();
+                    }
                 }
                 break;
             default:
