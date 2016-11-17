@@ -25,11 +25,17 @@ public class Main {
         int currentCycle = 0;
         while(!isAllComplete()) {
             for (int i = 0; i < 4; i++) {
+                processors.elementAt(i).setClock(currentCycle);
+                // need to do things for when instructions are complete OR when processor is stalled
+                if (processors.elementAt(i).isProcDone() || processors.elementAt(i).isProcStalled()) {
+                    processors.elementAt(i).cacheBusSnoop();
+                    continue;
+                }
                 processors.elementAt(i).getInstruction(i);
                 processors.elementAt(i).executeInstruction(i);
-                Bus.runBusTransactions(currentCycle);
-                currentCycle += 1;
             }
+            Bus.runBusTransactions(currentCycle);
+            currentCycle += 1;
         }
     }
 
@@ -57,7 +63,7 @@ public class Main {
         }
 
         instructions = new Instruction(inputs[1]);
-        processors = new Vector<Processor>();
+        processors = new Vector<>();
         int cacheSize = Integer.parseInt(inputs[2]);
         int associativity = Integer.parseInt(inputs[3]);
         int blockSize = Integer.parseInt(inputs[4]);
