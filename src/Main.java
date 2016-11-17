@@ -75,7 +75,7 @@ public class Main {
 
         switch(inputs[0].toUpperCase()) {
             case "MSI":
-                Bus.initBus(Protocol.MSI);
+                Bus.initBus(Protocol.MSI, blockSize/4); // blocksize/4 = number of (32bit/4byte)words per block
                 for (int i = 0; i < 4; i++) {
                     System.out.println(i);
                     processors.add(new Processor(cacheSize, blockSize, associativity, Protocol.MSI, instructions, i));
@@ -84,7 +84,7 @@ public class Main {
                 break;
 
             case "MESI":
-                Bus.initBus(Protocol.MESI);
+                Bus.initBus(Protocol.MESI, blockSize/4);
                 for (int i = 0; i < 4; i++) {
                     System.out.println(i);
                     processors.add(new Processor(cacheSize, blockSize, associativity, Protocol.MESI, instructions, i));
@@ -93,7 +93,7 @@ public class Main {
                 break;
 
             case "DRAGON":
-                Bus.initBus(Protocol.DRAGON);
+                Bus.initBus(Protocol.DRAGON, blockSize/4);
                 for (int i = 0; i < 4; i++) {
                     System.out.println(i);
                     processors.add(new Processor(cacheSize, blockSize, associativity, Protocol.DRAGON, instructions, i));

@@ -58,7 +58,6 @@ public class Cache {
     private int readMiss;
     private int writeHit;
     private int writeMiss;
-    private int currentCycle;
 
     private boolean isStalled;
     private BusOperation previousOperation;
@@ -70,7 +69,6 @@ public class Cache {
         readMiss = 0;
         writeHit = 0;
         writeMiss = 0;
-        currentCycle = 0;
 
         isStalled = false;
         previousOperation = null;
@@ -125,9 +123,7 @@ public class Cache {
         readMiss += 1;
         isStalled = true;
         if (protocol == Protocol.MSI || protocol == Protocol.MESI) { // guranteed to be INVALID state
-            // TODO: PROPERLY fill in once method completed
             Bus.putTransactionInBus(new BusOperation(Transaction.BUS_READ, cacheCoreNumber, address));
-            // change to SHARED_CLEAN state once data received
         } else { //DRAGON
             // TODO
             // Bus.putTransactionInBus(new BusOperation(Transaction.BUS_READ_MISS, cacheCoreNumber, address));
@@ -151,7 +147,6 @@ public class Cache {
                 writeHit++;
                 isStalled = true;
                 if ((protocol == Protocol.MSI || protocol == Protocol.MESI) && row.get(i).state == State.SHARED_CLEAN) {
-                    // TODO: PROPERLY fill in once method completed
                     Bus.putTransactionInBus(new BusOperation(Transaction.BUS_READ_EXCLUSIVE, cacheCoreNumber, address));
                 } else if (protocol == Protocol.DRAGON) {
                     // TODO
@@ -165,7 +160,6 @@ public class Cache {
         writeMiss += 1;
         isStalled = true;
         if (protocol == Protocol.MSI || protocol == Protocol.MESI) { // guranteed to be INVALID state
-            // TODO: PROPERLY fill in once method completed
             Bus.putTransactionInBus(new BusOperation(Transaction.BUS_READ_EXCLUSIVE, cacheCoreNumber, address));
         } else { //DRAGON
             // TODO
@@ -173,7 +167,6 @@ public class Cache {
     }
 
     public void busSnoop (int cycles) {
-        currentCycle = cycles;
         BusOperation operation = Bus.operation;
         if (operation == null) { // case where no operation
             return;
@@ -191,7 +184,7 @@ public class Cache {
                 memoryAccesses += 1;
                 isStalled = true;
                 Bus.operation.lastTransaction = Transaction.BUS_READ;
-                // TODO: memory access???????
+                Bus.memoryAccessExtraCycles(cycles);
             }
             // else this operation is from other cores, and we must update our state to reflect their operation
         } else {
@@ -349,7 +342,7 @@ public class Cache {
         }
     }
 
-    // TODO FINISH DRAGONSSSS
+    // TODO FINISH DRAGONSSSS ASDASDJHKHDSA
     private void dragonProtocolBus (CacheBlock block, Transaction transaction) {
         switch (block.state) {
             case MODIFIED:
