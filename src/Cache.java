@@ -60,7 +60,9 @@ public class Cache {
     private int writeMiss;
 
     private boolean isStalled;
-    private BusOperation previousOperation;
+    private boolean smSendBusUpdate;
+    private int smSendBusUpdateAddress;
+    private BusOperation previousOtherOperation;
 
     public Cache (int cacheSize, int associativity, int blockSize, Protocol proto, int cacheCoreNumber) {
         cacheAccesses = 0;
@@ -71,7 +73,9 @@ public class Cache {
         writeMiss = 0;
 
         isStalled = false;
-        previousOperation = null;
+        smSendBusUpdate = false;
+        smSendBusUpdateAddress = 0;
+        previousOtherOperation = null;
 
         this.cacheSize = cacheSize;
         this.associativity = associativity;
@@ -125,8 +129,7 @@ public class Cache {
         if (protocol == Protocol.MSI || protocol == Protocol.MESI) { // guranteed to be INVALID state
             Bus.putTransactionInBus(new BusOperation(Transaction.BUS_READ, cacheCoreNumber, address));
         } else { //DRAGON
-            // TODO
-            // Bus.putTransactionInBus(new BusOperation(Transaction.BUS_READ_MISS, cacheCoreNumber, address));
+            Bus.putTransactionInBus(new BusOperation(Transaction.PROCESSOR_READ_MISS, cacheCoreNumber, address));
         }
 
     }
@@ -149,8 +152,13 @@ public class Cache {
                 if ((protocol == Protocol.MSI || protocol == Protocol.MESI) && row.get(i).state == State.SHARED_CLEAN) {
                     Bus.putTransactionInBus(new BusOperation(Transaction.BUS_READ_EXCLUSIVE, cacheCoreNumber, address));
                 } else if (protocol == Protocol.DRAGON) {
-                    // TODO
-                    //do something for dragon Dx
+                    if (row.get(i).state == State.SHARED_CLEAN || row.get(i).state == State.SHARED_MODIFIED) {
+                        Bus.putTransactionInBus(new BusOperation(Transaction.BUS_UPDATE, cacheCoreNumber, address));
+                        // check if other cache has an update, use this var to change state to M if needed
+                        Bus.isBusUpdateReceived = false;
+                    } else if (row.get(i).state == State.EXCLUSIVE) { // special case
+                        row.set(i, new CacheBlock(State.MODIFIED, tag));
+                    }
                 }
                 reorderCache(row, i, tag);
                 return;
@@ -162,12 +170,17 @@ public class Cache {
         if (protocol == Protocol.MSI || protocol == Protocol.MESI) { // guranteed to be INVALID state
             Bus.putTransactionInBus(new BusOperation(Transaction.BUS_READ_EXCLUSIVE, cacheCoreNumber, address));
         } else { //DRAGON
-            // TODO
+            Bus.putTransactionInBus(new BusOperation(Transaction.PROCESSOR_WRITE_MISS, cacheCoreNumber, address));
         }
     }
 
     public void busSnoop (int cycles) {
         BusOperation operation = Bus.operation;
+        // special case of get to Sm state from "invalid" state, need to send bus update to other cache
+        if (smSendBusUpdate) {
+            Bus.putTransactionInBus(new BusOperation(Transaction.BUS_UPDATE, cacheCoreNumber, smSendBusUpdateAddress));
+            smSendBusUpdate = false;
+        }
         if (operation == null) { // case where no operation
             return;
             // check if transaction is from current core and if transaction is completed
@@ -176,7 +189,12 @@ public class Cache {
                 Bus.hasCacheReceivedTransaction = true;
                 return;
             }
-            if (Bus.hasTransactionResult) { //i.e, busRead/busReadX is successful
+            if (Bus.hasTransactionResult) { // i.e, busRead/busReadX is successful
+                // case of no other cache in Sm/Sc state (busUpdate unsuccessful)
+                if (Bus.isBusUpdateReceived) {
+                    operation.lastTransaction = Transaction.BUS_UPDATE;
+                    Bus.isBusUpdateReceived = true;
+                }
                 updateSelfCache(operation);
                 isStalled = false;
                 Bus.hasCacheReceivedTransaction = true;
@@ -184,17 +202,20 @@ public class Cache {
                 memoryAccesses += 1;
                 isStalled = true;
                 Bus.operation.lastTransaction = Transaction.BUS_READ;
+                if (protocol == Protocol.DRAGON) {
+                    Bus.operation.lastTransaction = operation.transaction; // WrMiss or RdMiss
+                }
                 Bus.memoryAccessExtraCycles(cycles);
             }
             // else this operation is from other cores, and we must update our state to reflect their operation
         } else {
-            if (previousOperation.equals(operation)) {
+            if (previousOtherOperation.equals(operation)) {
                 return;
             }
             if (operation.transaction != Transaction.BUS_FLUSH) {
                 updateFromOtherCache(operation);
             }
-            previousOperation = operation;
+            previousOtherOperation = operation;
         }
     }
 
@@ -212,26 +233,39 @@ public class Cache {
                 if (protocol == Protocol.MSI || protocol == Protocol.MESI) {
                     state = State.SHARED_CLEAN;
                 } else { //DRAGON
-                    // TODO
+                    // uses RdMiss & WrMiss to indicate
                 }
                 break;
-            case BUS_READ_EXCLUSIVE:
-                if (protocol == Protocol.MSI || protocol == Protocol.MESI) {
-                    state = State.SHARED_MODIFIED;
-                } else { //DRAGON
-                    // TODO
-                }
+            case PROCESSOR_READ_MISS:
+                state = State.SHARED_CLEAN;
+                break;
+            case PROCESSOR_WRITE_MISS:
+                state = State.SHARED_MODIFIED;
+                smSendBusUpdate = true;
+                smSendBusUpdateAddress = operation.address;
+                break;
+            case BUS_READ_EXCLUSIVE: // MSI/MESI only
+                state = State.MODIFIED;
                 break;
             case BUS_UPDATE: // DRAGON only
-                // TODO
+                state = State.SHARED_MODIFIED;
                 break;
             default:
                 break;
         }
-        if (operation.lastTransaction == Transaction.BUS_READ && protocol == Protocol.MESI) {
+        if (protocol == Protocol.MESI && operation.lastTransaction == Transaction.BUS_READ) {
             state = State.EXCLUSIVE;
         }
-        // TODO: DRAGON lastTransaction
+
+        if (protocol == Protocol.DRAGON) {
+            if (operation.lastTransaction == Transaction.PROCESSOR_READ_MISS) {
+                state = State.EXCLUSIVE;
+            } else if (operation.lastTransaction == Transaction.PROCESSOR_WRITE_MISS) {
+                state = State.MODIFIED;
+            } else if (operation.lastTransaction == Transaction.BUS_UPDATE) {
+                state = State.MODIFIED;
+            }
+        }
 
         if (state == null) {
             System.out.println("updateSelfCache error in assigning state");
@@ -342,7 +376,6 @@ public class Cache {
         }
     }
 
-    // TODO FINISH DRAGONSSSS ASDASDJHKHDSA
     private void dragonProtocolBus (CacheBlock block, Transaction transaction) {
         switch (block.state) {
             case MODIFIED:
@@ -351,18 +384,25 @@ public class Cache {
                 }
                 Bus.flushToBus(cacheCoreNumber);
                 break;
-            case EXCLUSIVE:
-                if (transaction == transaction.BUS_READ) {
+            case SHARED_MODIFIED:
+                if (transaction == Transaction.BUS_UPDATE) {
                     block.state = State.SHARED_CLEAN;
+                    //Bus Update here (don't need to do anything to data)
+                    Bus.isBusUpdateReceived = true;
+                } else if (transaction == Transaction.BUS_READ) {
+                    Bus.flushToBus(cacheCoreNumber);
                 }
                 break;
             case SHARED_CLEAN:
+                if (transaction == Transaction.BUS_UPDATE) {
+                    //Bus Update here (don't need to do anything to data)
+                    Bus.isBusUpdateReceived = true;
+                }
                 break;
-            case SHARED_MODIFIED:
-                if (transaction == transaction.BUS_UPDATE) {
+            case EXCLUSIVE:
+                if (transaction == Transaction.BUS_READ) {
                     block.state = State.SHARED_CLEAN;
                 }
-                // TODO: bus update???
                 break;
             default:
                 System.out.println("ERROR ERROR PARAMETER");

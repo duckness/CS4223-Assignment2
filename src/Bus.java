@@ -12,6 +12,7 @@ public class Bus {
     public static boolean isTransactionCompleted;
     public static boolean hasTransactionResult;
     public static boolean hasCacheReceivedTransaction;
+    public static boolean isBusUpdateReceived;
     public static BusOperation operation;
     public static int expectedCompletedCycle;
     private static LinkedList<BusOperation> allBusOperations;
@@ -22,6 +23,7 @@ public class Bus {
         isTransactionCompleted = true;
         hasTransactionResult = false;
         hasCacheReceivedTransaction = true;
+        isBusUpdateReceived = true;
         operation = null;
         protocol = proto;
         cycles_block = CYCLES_WORD * wordsPerBlock;
@@ -29,7 +31,7 @@ public class Bus {
          * don't use Java Queue interface as it adds restrictions we don't want, need to be careful with using LinkedList
          * Add to front of LinkedList (unless it's flush, add to END) and remove from end of LinkedList
          */
-        allBusOperations = new LinkedList<BusOperation>();
+        allBusOperations = new LinkedList<>();
         expectedCompletedCycle = -1;
     }
 
@@ -74,7 +76,11 @@ public class Bus {
     }
 
     public static void memoryAccessExtraCycles(int currentCycle) {
-        expectedCompletedCycle = currentCycle + CYCLES_MEMORY - cycles_block;
+        if (protocol == Protocol.MSI || protocol == Protocol.MESI) {
+            expectedCompletedCycle = currentCycle + CYCLES_MEMORY - cycles_block;
+        } else { // DRAGON
+            expectedCompletedCycle = currentCycle + CYCLES_MEMORY - CYCLES_WORD;
+        }
         accessMemory();
     }
 
@@ -95,7 +101,7 @@ public class Bus {
                 expectedCompletedCycle = cycle + cycles_block - 1; // we do this first, then if need memory access add additional cycles later
             }
         } else { // DRAGON
-            // TODO
+            // as DRAGON simply sends a WORD (1 cycle), we don't need to do anything as they will receive the item the next cycle
         }
     }
 }
