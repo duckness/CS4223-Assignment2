@@ -8,14 +8,14 @@ public class BusOperation implements Comparable<BusOperation>{
     public int address;
     public int cacheCore;
 
-    public BusOperation(Transaction transaction, int address, int cacheCore) {
+    public BusOperation(Transaction transaction,int cacheCore, int address) {
         this.transaction = transaction;
         this.address = address;
         this.cacheCore = cacheCore;
         this.lastTransaction = null;
     }
 
-    public BusOperation(Transaction transaction, int address, int cacheCore, Transaction lastTransaction) {
+    public BusOperation(Transaction transaction, int cacheCore, int address, Transaction lastTransaction) {
         this.transaction = transaction;
         this.address = address;
         this.cacheCore = cacheCore;

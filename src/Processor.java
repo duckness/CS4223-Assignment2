@@ -48,13 +48,16 @@ public class Processor {
                 cache.writeCache(this.currentAddress);
                 break;
             case 2:
-                // do nothing for NOP instruction
+                // do (almost) nothing for NOP instruction
+                cache.busSnoop(currentCycle);
                 //System.out.println("Processor " + processorNum + " current cycle is " + this.currentCycle);
                 break;
             case -1:
                 this.isDone = true;
                 System.out.println("Processor " + processorNum + " has no more instructions");
                 System.out.println("Processor " + processorNum + "'s final cycle is " + this.currentCycle);
+                cache.printCacheStats();
+                System.out.println();
                 break;
             default:
                 System.out.println("something wrong in executeInstruction function at Processor class");

@@ -27,6 +27,8 @@ public class Main {
             for (int i = 0; i < 4; i++) {
                 processors.elementAt(i).setClock(currentCycle);
                 // need to do things for when instructions are complete OR when processor is stalled
+                boolean a = processors.elementAt(i).isProcDone();
+                boolean b = processors.elementAt(i).isProcStalled();
                 if (processors.elementAt(i).isProcDone() || processors.elementAt(i).isProcStalled()) {
                     processors.elementAt(i).cacheBusSnoop();
                     continue;
@@ -36,6 +38,9 @@ public class Main {
             }
             Bus.runBusTransactions(currentCycle);
             currentCycle += 1;
+            if (currentCycle%1000000 == 0) {
+                System.out.println("cycle " + currentCycle);
+            }
         }
     }
 
@@ -68,16 +73,16 @@ public class Main {
         int associativity = Integer.parseInt(inputs[3]);
         int blockSize = Integer.parseInt(inputs[4]);
 
-        /*
+
         //testing if instructions work, print out the first 100 instructions (hint, it works)
-        for (int j = 0; j < 100; j++) {
+        /*
+        for (int j = 0; j < 1000; j++) {
             System.out.println("Cycle " + (j+1));
             for (int i = 0; i < 4; i++) {
                 System.out.print("processor " + i + ": ");
                 System.out.println(instructions.getInstruction(i));
             }
-        }
-        */
+        }*/
 
         switch(inputs[0].toUpperCase()) {
             case "MSI":

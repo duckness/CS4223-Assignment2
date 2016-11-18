@@ -10,5 +10,6 @@ public enum Transaction {
     BUS_READ_EXCLUSIVE,
     BUS_WRITE_BACK,
     BUS_UPDATE,
-    BUS_FLUSH;
+    BUS_FLUSH,
+    NULL;
 }

@@ -75,7 +75,7 @@ public class Cache {
         isStalled = false;
         smSendBusUpdate = false;
         smSendBusUpdateAddress = 0;
-        previousOtherOperation = null;
+        previousOtherOperation = new BusOperation(Transaction.NULL, -1, -1); // for first round of checks
 
         this.cacheSize = cacheSize;
         this.associativity = associativity;

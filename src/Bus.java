@@ -55,7 +55,7 @@ public class Bus {
      * flush goes first though, so we need to add to the BACK of the linked list
      */
     public static void flushToBus(int cacheCore) {
-        BusOperation busFlush = new BusOperation(Transaction.BUS_FLUSH, 0, cacheCore);
+        BusOperation busFlush = new BusOperation(Transaction.BUS_FLUSH, cacheCore, 0);
         allBusOperations.addLast(busFlush);
         hasTransactionResult = true;
     }
@@ -69,7 +69,7 @@ public class Bus {
 
         if(hasCacheReceivedTransaction && !allBusOperations.isEmpty()) {
             hasTransactionResult = false;
-            hasCacheReceivedTransaction = true;
+            hasCacheReceivedTransaction = false;
             operation = allBusOperations.pollLast(); // get and remove last item in the LinkedList
             addAdditionalCycles(operation.transaction, currentCycle);
         }
@@ -103,5 +103,6 @@ public class Bus {
         } else { // DRAGON
             // as DRAGON simply sends a WORD (1 cycle), we don't need to do anything as they will receive the item the next cycle
         }
+        isTransactionCompleted = false;
     }
 }
