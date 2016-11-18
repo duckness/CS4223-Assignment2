@@ -36,11 +36,12 @@ public class Main {
                 processors.elementAt(i).getInstruction(i);
                 processors.elementAt(i).executeInstruction(i);
             }
-            Bus.runBusTransactions(currentCycle);
-            currentCycle += 1;
-            if (currentCycle%1000000 == 0) {
+            // for debugging
+            if (currentCycle%100 == 0) {
                 System.out.println("cycle " + currentCycle);
             }
+            Bus.runBusTransactions(currentCycle);
+            currentCycle += 1;
         }
     }
 

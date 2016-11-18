@@ -148,7 +148,6 @@ public class Cache {
                     break;
                 }
                 writeHit++;
-                isStalled = true;
                 if ((protocol == Protocol.MSI || protocol == Protocol.MESI) && row.get(i).state == State.SHARED_CLEAN) {
                     Bus.putTransactionInBus(new BusOperation(Transaction.BUS_READ_EXCLUSIVE, cacheCoreNumber, address));
                 } else if (protocol == Protocol.DRAGON) {
@@ -177,6 +176,7 @@ public class Cache {
     public void busSnoop (int cycles) {
         BusOperation operation = Bus.operation;
         // special case of get to Sm state from "invalid" state, need to send bus update to other cache
+        // TODO: this should be a Bus Variable
         if (smSendBusUpdate) {
             Bus.putTransactionInBus(new BusOperation(Transaction.BUS_UPDATE, cacheCoreNumber, smSendBusUpdateAddress));
             smSendBusUpdate = false;
@@ -193,7 +193,7 @@ public class Cache {
                 // case of no other cache in Sm/Sc state (busUpdate unsuccessful)
                 if (Bus.isBusUpdateReceived) {
                     operation.lastTransaction = Transaction.BUS_UPDATE;
-                    Bus.isBusUpdateReceived = true;
+                    Bus.isBusUpdateReceived = false;
                 }
                 updateSelfCache(operation);
                 isStalled = false;
@@ -241,6 +241,7 @@ public class Cache {
                 break;
             case PROCESSOR_WRITE_MISS:
                 state = State.SHARED_MODIFIED;
+                // TODO: this should be a Bus Variable
                 smSendBusUpdate = true;
                 smSendBusUpdateAddress = operation.address;
                 break;
@@ -330,6 +331,7 @@ public class Cache {
                     block.state = State.INVALID;
                 }
                 Bus.flushToBus(cacheCoreNumber);
+                memoryAccesses += 1;
                 break;
             case SHARED_CLEAN:
                 if (transaction == Transaction.BUS_READ_EXCLUSIVE) {

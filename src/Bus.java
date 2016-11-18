@@ -23,7 +23,11 @@ public class Bus {
         isTransactionCompleted = true;
         hasTransactionResult = false;
         hasCacheReceivedTransaction = true;
-        isBusUpdateReceived = true;
+        if (proto == Protocol.DRAGON) {
+            isBusUpdateReceived = true;
+        } else {
+            isBusUpdateReceived = false;
+        }
         operation = null;
         protocol = proto;
         cycles_block = CYCLES_WORD * wordsPerBlock;
@@ -77,9 +81,9 @@ public class Bus {
 
     public static void memoryAccessExtraCycles(int currentCycle) {
         if (protocol == Protocol.MSI || protocol == Protocol.MESI) {
-            expectedCompletedCycle = currentCycle + CYCLES_MEMORY - cycles_block;
+            expectedCompletedCycle = currentCycle + CYCLES_MEMORY - cycles_block - 1;
         } else { // DRAGON
-            expectedCompletedCycle = currentCycle + CYCLES_MEMORY - CYCLES_WORD;
+            expectedCompletedCycle = currentCycle + CYCLES_MEMORY - CYCLES_WORD - 1;
         }
         accessMemory();
     }
