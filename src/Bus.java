@@ -5,9 +5,9 @@ import java.util.LinkedList;
  */
 public class Bus {
 
-    private static final int CYCLES_MEMORY = 100;
-    private static final int CYCLES_WORD = 1; // use this for DRAGON?
-    private static int cycles_block; // = wordsInBlock * CYCLES_WORD, use this for MSI/MESI
+    public static final int CYCLES_MEMORY = 100;
+    public static final int CYCLES_WORD = 1; // use this for DRAGON?
+    public static int cycles_block; // = wordsInBlock * CYCLES_WORD, use this for MSI/MESI
 
     public static boolean isTransactionCompleted;
     public static boolean hasTransactionResult;
@@ -16,7 +16,7 @@ public class Bus {
     public static BusOperation operation;
     public static int expectedCompletedCycle;
     private static LinkedList<BusOperation> allBusOperations;
-    private static Protocol protocol;
+    public static Protocol protocol;
 
     // static to make sure that only one copy exists
     public static void initBus(Protocol proto, int wordsPerBlock) {

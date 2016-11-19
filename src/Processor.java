@@ -11,7 +11,7 @@ public class Processor {
     Instruction instruction;
     boolean isDone = false;
     int currentCycle = 0;
-    Hashtable<String, Integer> currentInstr;
+    Hashtable<String, Integer> cacheResults;
     int currentInstruction;
     int currentAddress;
 
@@ -56,13 +56,19 @@ public class Processor {
                 this.isDone = true;
                 System.out.println("Processor " + processorNum + " has no more instructions");
                 System.out.println("Processor " + processorNum + "'s final cycle is " + this.currentCycle);
-                cache.printCacheStats();
+                // For testing
+                // cache.printCacheStats();
+                cacheResults = cache.retrieveCacheResults();
                 System.out.println();
                 break;
             default:
                 System.out.println("something wrong in executeInstruction function at Processor class");
                 break;
         }
+    }
+
+    public Hashtable<String, Integer> getCacheResults() {
+        return cacheResults;
     }
 
     public boolean isProcDone() {

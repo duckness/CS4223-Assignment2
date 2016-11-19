@@ -15,8 +15,10 @@ public class Instruction {
     private List<Scanner> scs;
     // stores a buffer of instructions if required
     private List<Integer> buffers;
+    private int[] currentLine;
 
     public Instruction(String arg) throws FileNotFoundException {
+        currentLine = new int[] {0,0,0,0};
         inputStreams = new ArrayList<>(4);
         scs = new ArrayList<>(4);
         buffers = new ArrayList<>(4);
@@ -58,6 +60,8 @@ public class Instruction {
             }
             // else grab a new instruction from the file
         } else {
+            // for debugging
+            currentLine[processor] += 1;
             // get instructions from new line if exists
             if (scs.get(processor).hasNextLine()) {
                 line = scs.get(processor).nextLine();

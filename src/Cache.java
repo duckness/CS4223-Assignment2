@@ -1,4 +1,5 @@
 import java.lang.Math;
+import java.util.Hashtable;
 
 /**
  * The L1 cache.
@@ -58,6 +59,11 @@ public class Cache {
     private int readMiss;
     private int writeHit;
     private int writeMiss;
+    private int update;
+    private int busRead;
+    private int privateData;
+    private int sharedData;
+    private int writeHitMemory;
 
     private boolean isStalled;
     private boolean smSendBusUpdate;
@@ -71,6 +77,11 @@ public class Cache {
         readMiss = 0;
         writeHit = 0;
         writeMiss = 0;
+        update = 0;
+        busRead = 0;
+        privateData = 0;
+        sharedData = 0;
+        writeHitMemory = 0;
 
         isStalled = false;
         smSendBusUpdate = false;
@@ -118,6 +129,7 @@ public class Cache {
                 if ((protocol == Protocol.MSI || protocol == Protocol.MESI) && row.get(i).state == State.INVALID) {
                     break;
                 }
+                checkSharedPrivate(row.get(i).state);
                 readHit += 1;
                 reorderCache(row, i, tag);
                 return;
@@ -147,6 +159,7 @@ public class Cache {
                 if ((protocol == Protocol.MSI || protocol == Protocol.MESI) && row.get(i).state == State.INVALID) {
                     break;
                 }
+                checkSharedPrivate(row.get(i).state);
                 writeHit++;
                 if ((protocol == Protocol.MSI || protocol == Protocol.MESI) && row.get(i).state == State.SHARED_CLEAN) {
                     Bus.putTransactionInBus(new BusOperation(Transaction.BUS_READ_EXCLUSIVE, cacheCoreNumber, address));
@@ -176,7 +189,6 @@ public class Cache {
     public void busSnoop (int cycles) {
         BusOperation operation = Bus.operation;
         // special case of get to Sm state from "invalid" state, need to send bus update to other cache
-        // TODO: this should be a Bus Variable
         if (smSendBusUpdate) {
             Bus.putTransactionInBus(new BusOperation(Transaction.BUS_UPDATE, cacheCoreNumber, smSendBusUpdateAddress));
             smSendBusUpdate = false;
@@ -190,16 +202,20 @@ public class Cache {
                 return;
             }
             if (Bus.hasTransactionResult) { // i.e, busRead/busReadX is successful
+                busRead += 1;
                 // case of no other cache in Sm/Sc state (busUpdate unsuccessful)
-                if (Bus.isBusUpdateReceived) {
+                if (!Bus.isBusUpdateReceived) {
                     operation.lastTransaction = Transaction.BUS_UPDATE;
-                    Bus.isBusUpdateReceived = false;
+                    Bus.isBusUpdateReceived = true;
                 }
                 updateSelfCache(operation);
                 isStalled = false;
                 Bus.hasCacheReceivedTransaction = true;
             } else {                        // i.e, busRead/busReadX is unsuccessful, read from main memory
                 memoryAccesses += 1;
+                if (operation.transaction == Transaction.BUS_READ_EXCLUSIVE || operation.transaction == Transaction.PROCESSOR_WRITE_MISS) {
+                    writeHitMemory += 1;
+                }
                 isStalled = true;
                 Bus.operation.lastTransaction = Transaction.BUS_READ;
                 if (protocol == Protocol.DRAGON) {
@@ -241,7 +257,6 @@ public class Cache {
                 break;
             case PROCESSOR_WRITE_MISS:
                 state = State.SHARED_MODIFIED;
-                // TODO: this should be a Bus Variable
                 smSendBusUpdate = true;
                 smSendBusUpdateAddress = operation.address;
                 break;
@@ -329,13 +344,14 @@ public class Cache {
                     block.state = State.SHARED_CLEAN;
                 } else if (transaction == Transaction.BUS_READ_EXCLUSIVE) {
                     block.state = State.INVALID;
+                    update += 1;
                 }
                 Bus.flushToBus(cacheCoreNumber);
-                memoryAccesses += 1;
                 break;
             case SHARED_CLEAN:
                 if (transaction == Transaction.BUS_READ_EXCLUSIVE) {
                     block.state = State.INVALID;
+                    update += 1;
                 }
                 break;
             case INVALID:
@@ -353,6 +369,7 @@ public class Cache {
                     block.state = State.SHARED_CLEAN;
                 } else if (transaction == Transaction.BUS_READ_EXCLUSIVE) {
                     block.state = State.INVALID;
+                    update += 1;
                 }
                 Bus.flushToBus(cacheCoreNumber);
                 break;
@@ -361,12 +378,14 @@ public class Cache {
                     block.state = State.SHARED_CLEAN;
                 } else if (transaction == Transaction.BUS_READ_EXCLUSIVE) {
                     block.state = State.INVALID;
+                    update += 1;
                 }
                 Bus.sendDataToBus();
                 break;
             case SHARED_CLEAN:
                 if (transaction == Transaction.BUS_READ_EXCLUSIVE) {
                     block.state = State.INVALID;
+                    update += 1;
                 }
                 break;
             case INVALID:
@@ -391,6 +410,7 @@ public class Cache {
                     block.state = State.SHARED_CLEAN;
                     //Bus Update here (don't need to do anything to data)
                     Bus.isBusUpdateReceived = true;
+                    update += 1;
                 } else if (transaction == Transaction.BUS_READ) {
                     Bus.flushToBus(cacheCoreNumber);
                 }
@@ -399,6 +419,7 @@ public class Cache {
                 if (transaction == Transaction.BUS_UPDATE) {
                     //Bus Update here (don't need to do anything to data)
                     Bus.isBusUpdateReceived = true;
+                    update += 1;
                 }
                 break;
             case EXCLUSIVE:
@@ -425,11 +446,49 @@ public class Cache {
     }
 
     /**
+     * the actual data we need for the assignment
+     */
+    public Hashtable<String, Integer> retrieveCacheResults() {
+        System.out.println("Data Cache miss rate(total miss/total cache access attempts): " + ((double)cacheAccesses / (double)memoryAccesses));
+        Hashtable<String, Integer> results = new Hashtable<>();
+
+        // amount of data traffic busread/buswrite/busupdate
+        int traffic;
+        if (protocol == Protocol.MSI || protocol == Protocol.MESI) {
+            traffic = (busRead - memoryAccesses) * blockSize;
+        } else { // dragon
+            // bus update receives 1 word = 4 bytes
+            // we count number of received bytes
+            traffic = update * 4;
+        }
+        results.put("traffic", traffic);
+        // number of invalidations/updates
+        results.put("update", update);
+        // distribution of private/shared data (own cache only)
+        results.put("private", privateData);
+        results.put("shared", sharedData);
+        // average write latency
+        results.put("hitSelf", writeHit);
+        results.put("hitOther", writeMiss - writeHitMemory);
+        results.put("hitMemory", writeHitMemory);
+
+        return results;
+    }
+
+    /**
      * Check if cache is waiting for some operation on bus/main memory to complete
      * @return true/false if above
      */
     public boolean isCacheStalled () {
         return isStalled;
+    }
+
+    private void checkSharedPrivate (State state) {
+        if (state == State.MODIFIED || state == State.EXCLUSIVE) {
+            privateData += 1;
+        } else {// state SHARED_CLEAN SHARED_MODIFIED
+            sharedData += 1;
+        }
     }
 
     /**

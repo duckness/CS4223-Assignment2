@@ -1,4 +1,5 @@
 import java.io.FileNotFoundException;
+import java.util.Hashtable;
 import java.util.Vector;
 
 
@@ -37,12 +38,49 @@ public class Main {
                 processors.elementAt(i).executeInstruction(i);
             }
             // for debugging
-            if (currentCycle%100 == 0) {
+            if (currentCycle%100000000 == 0) {
                 System.out.println("cycle " + currentCycle);
             }
             Bus.runBusTransactions(currentCycle);
             currentCycle += 1;
         }
+    }
+
+    private static void calculateResults() {
+        // amount of data traffic busread/buswrite/busupdate
+        int traffic = 0;
+        // number of invalidations/updates
+        int update = 0;
+        // distribution of private/shared data
+        int privateData = 0;
+        int sharedData = 0;
+        // average write latency
+        int hitSelf = 0;
+        int hitOther = 0;
+        int hitMemory = 0;
+
+        for (int i = 0; i < 4; i++) {
+            Hashtable<String, Integer> thisCache = processors.elementAt(i).getCacheResults();
+            traffic += thisCache.get("traffic");
+            update += thisCache.get("update");
+            privateData += thisCache.get("private");
+            sharedData += thisCache.get("shared");
+            hitSelf += thisCache.get("hitSelf");
+            hitOther += thisCache.get("hitOther");
+            hitMemory += thisCache.get("hitMemory");
+        }
+        System.out.println("Total amount of data traffic (bytes):  " + traffic);
+        System.out.println("Total number of invalidations/updates: " + update);
+        System.out.println("Private data accesses(self): " + privateData);
+        System.out.println("Shared data accesses(self):  " + sharedData);
+        int memoryCycles;
+        if (Bus.protocol == Protocol.MSI || Bus.protocol == Protocol.MESI) {
+            memoryCycles = Bus.cycles_block;
+        } else {
+            memoryCycles = Bus.CYCLES_WORD;
+        }
+        int averageLatency = (hitOther*memoryCycles + hitMemory*100) / (hitSelf+hitOther+hitMemory);
+        System.out.println("Average latency (number of clock cycles): " + averageLatency);
     }
 
     /**
@@ -93,6 +131,7 @@ public class Main {
                     processors.add(new Processor(cacheSize, blockSize, associativity, Protocol.MSI, instructions, i));
                 }
                 runProcessors();
+                calculateResults();
                 break;
 
             case "MESI":
@@ -102,6 +141,7 @@ public class Main {
                     processors.add(new Processor(cacheSize, blockSize, associativity, Protocol.MESI, instructions, i));
                 }
                 runProcessors();
+                calculateResults();
                 break;
 
             case "DRAGON":
@@ -111,6 +151,7 @@ public class Main {
                     processors.add(new Processor(cacheSize, blockSize, associativity, Protocol.DRAGON, instructions, i));
                 }
                 runProcessors();
+                calculateResults();
                 break;
 
             default:
