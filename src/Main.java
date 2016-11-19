@@ -79,7 +79,7 @@ public class Main {
         } else {
             memoryCycles = Bus.CYCLES_WORD;
         }
-        int averageLatency = (hitOther*memoryCycles + hitMemory*100) / (hitSelf+hitOther+hitMemory);
+        double averageLatency = (double)(hitOther*memoryCycles + hitMemory*100) / (double)(hitSelf+hitOther+hitMemory);
         System.out.println("Average latency (number of clock cycles): " + averageLatency);
     }
 
