@@ -400,13 +400,14 @@ public class Cache {
     private void dragonProtocolBus (CacheBlock block, Transaction transaction) {
         switch (block.state) {
             case MODIFIED:
-                if (transaction == Transaction.BUS_READ) {
+                if (transaction == Transaction.BUS_READ || transaction == Transaction.PROCESSOR_WRITE_MISS) {
                     block.state = State.SHARED_MODIFIED;
                 }
+                Bus.sendDataToBus();
                 Bus.flushToBus(cacheCoreNumber);
                 break;
             case SHARED_MODIFIED:
-                if (transaction == Transaction.BUS_UPDATE) {
+                if (transaction == Transaction.BUS_UPDATE || transaction == Transaction.PROCESSOR_WRITE_MISS) {
                     block.state = State.SHARED_CLEAN;
                     //Bus Update here (don't need to do anything to data)
                     Bus.isBusUpdateReceived = true;
@@ -414,18 +415,21 @@ public class Cache {
                 } else if (transaction == Transaction.BUS_READ) {
                     Bus.flushToBus(cacheCoreNumber);
                 }
+                Bus.sendDataToBus();
                 break;
             case SHARED_CLEAN:
-                if (transaction == Transaction.BUS_UPDATE) {
+                if (transaction == Transaction.BUS_UPDATE || transaction == Transaction.PROCESSOR_READ_MISS) {
                     //Bus Update here (don't need to do anything to data)
                     Bus.isBusUpdateReceived = true;
                     update += 1;
                 }
+                Bus.sendDataToBus();
                 break;
             case EXCLUSIVE:
-                if (transaction == Transaction.BUS_READ) {
+                if (transaction == Transaction.BUS_READ || transaction == Transaction.PROCESSOR_READ_MISS) {
                     block.state = State.SHARED_CLEAN;
                 }
+                Bus.sendDataToBus();
                 break;
             default:
                 System.out.println("ERROR ERROR PARAMETER");

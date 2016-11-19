@@ -57,7 +57,7 @@ public class Processor {
                 System.out.println("Processor " + processorNum + " has no more instructions");
                 System.out.println("Processor " + processorNum + "'s final cycle is " + this.currentCycle);
                 // For testing
-                // cache.printCacheStats();
+                cache.printCacheStats();
                 cacheResults = cache.retrieveCacheResults();
                 System.out.println();
                 break;
