@@ -449,7 +449,7 @@ public class Cache {
      * the actual data we need for the assignment
      */
     public Hashtable<String, Integer> retrieveCacheResults() {
-        System.out.println("Data Cache miss rate(total miss/total cache access attempts): " + ((double)cacheAccesses / (double)memoryAccesses));
+        System.out.println("Data Cache miss rate(total miss/total cache access attempts): " + ((double)memoryAccesses / (double)cacheAccesses));
         Hashtable<String, Integer> results = new Hashtable<>();
 
         // amount of data traffic busread/buswrite/busupdate
