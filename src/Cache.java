@@ -94,7 +94,7 @@ public class Cache {
         this.protocol = proto;
         this.cacheCoreNumber = cacheCoreNumber;
 
-        arraySize = cacheSize/blockSize/associativity;              // this is the number of "rows" in the cache
+        arraySize = cacheSize/blockSize;                            // this is the number of "rows" in the cache
 
         l1cache = new FixedList<>(arraySize);                       // create a fixed size ArrayList as our cache
         for (int i = 0; i < arraySize; i++) {
